@@ -1,8 +1,13 @@
-import java.security.NoSuchAlgorithmException;
+//import java.security.NoSuchAlgorithmException;
 
 public class Main {
-	public static void main(String[] args) throws NoSuchAlgorithmException {
+	public static void main(String[] args) { //throws NoSuchAlgorithmException {
 		
+		BlockchainManager manager = new BlockchainManager();
+		
+		manager.start();
+		
+		/*
 		//create previous hash for first block
 		String firstPrevHash = "00000000000000000000000000000000" 
 			+ "00000000000000000000000000000000";
@@ -19,5 +24,6 @@ public class Main {
 		
 		//check block validity after mining
 		System.out.println("after mining, is block valid? " + block.isValid());
+		*/
 	}
 }
