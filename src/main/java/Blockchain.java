@@ -19,6 +19,7 @@ public class Blockchain {
 		
 		//check if block hash has appropriate number of 0s at beginning
 		if(toAdd.isValid()) {
+
 			//if no blocks, first block is genesis block with all 0s for prev hash
 			if(this.size == 0) {
 				String firstPrevHash = "00000000000000000000000000000000" 
@@ -49,5 +50,13 @@ public class Blockchain {
 	
 	public Block getBlock(long index) {
 		return blockList.get(index);
+	}
+	
+	public long getMostRecentTimestamp() {
+		return blockList.get(size - 1).getTimestamp();
+	}
+	
+	public long size() {
+		return this.size;
 	}
 }

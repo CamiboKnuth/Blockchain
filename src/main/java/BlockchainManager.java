@@ -20,6 +20,8 @@ public class BlockchainManager extends Thread {
 	public static int bindPort;
 	
 	
+
+	
 	private MulticastSocket udpSocket;
 	private ServerSocket chainServerSocket;
 	
@@ -34,6 +36,8 @@ public class BlockchainManager extends Thread {
 		peerList = new ArrayList<InetSocketAddress>();
 		parser = new JSONParser();
 		bindPort = CHAIN_BASE_PORT;
+		
+		//TODO: don't let bind attempts surpass UDP_OFFSET
 		
 		//bind blockchain server socket, loop until a port is found to bind to
 		boolean bound = false;
@@ -68,6 +72,7 @@ public class BlockchainManager extends Thread {
 		//start receiving blocks and chain exchange requests
 		receiver.start();
 		
+		//main loop
 		while(true) {
 
 		

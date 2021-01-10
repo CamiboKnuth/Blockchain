@@ -5,11 +5,14 @@ public class Block {
 	//identifying number of block
 	private long blockNum;
 	
-	//data contained in block
-	private String data;
+	//time when block was created
+	private long timestamp;
 	
 	//hash of previous block
 	private String prevHash;
+	
+	//data contained in block
+	private String data;
 	
 	//unique value to create block hash
 	private long nonce;
@@ -18,8 +21,11 @@ public class Block {
 	//construct block with id number, hash of previous block, data to contain
 	public Block(long blockNum, String prevHash, String data) {
 		this.blockNum = blockNum;
+		this.timestamp = System.currentTimeMillis();
 		this.prevHash = prevHash;
 		this.data = data;
+		
+		//temporarily set nonce to zero
 		this.nonce = 0;
 	}
 	
@@ -35,9 +41,9 @@ public class Block {
 			//augment and check next nonce
 			this.nonce ++;
 			
-			//hash blocknum, data, prevhash, and nonce together
-			String toHash = Integer.toString(this.blockNum) + data + prevHash
-				+ Integer.toString(nonce);
+			//hash blocknum, timestamp, prevhash, data, and nonce together
+			String toHash = Integer.toString(this.blockNum) + Long.toString(this.timestamp)
+				+ prevHash + data + Integer.toString(nonce);
 			messageDigest.update(toHash.getBytes());
 			
 			//get hexadecimal string version of hash
@@ -48,14 +54,19 @@ public class Block {
 		
 		System.out.println("Block Mined Successfully:");
 		System.out.println("   block number    : " + this.blockNum);
-		System.out.println("   contains data   : " + this.data);
-		System.out.println("   nonce value is  : " + Integer.toString(this.nonce));
+		System.out.println("   timestamp is    : " + this.timestamp);
 		System.out.println("   previous hash is: " + this.prevHash);
+		System.out.println("   contains data   : " + this.data);
+		System.out.println("   nonce value is  : " + this.nonce);
 		System.out.println("   block hash is   : " + this.calculateHash());
 	}
 	
 	public long getNum() {
 		return this.blockNum;
+	}
+	
+	public long getTimestamp() {
+		return this.timestamp;
 	}
 	
 	public String getPrevHash() {
@@ -84,9 +95,9 @@ public class Block {
 		//create digest to create SHA-256 hashes
 		MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
 		
-		//hash blocknum, data, prevhash, and nonce together
-		String toHash = Integer.toString(this.blockNum) + data + prevHash
-			+ Integer.toString(nonce);
+		//hash blocknum, timestamp, prevhash, data, and nonce together
+		String toHash = Integer.toString(this.blockNum) + Long.toString(this.timestamp)
+			+ prevHash + data + Integer.toString(nonce);
 		messageDigest.update(toHash.getBytes());
 		
 		//get hexadecimal string version of hash

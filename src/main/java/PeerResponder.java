@@ -1,6 +1,8 @@
 import java.net.*;
 
-
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 public class PeerResponder extends Thread {
 	
@@ -8,10 +10,11 @@ public class PeerResponder extends Thread {
 	
 	//multicast address
 	private InetAddress groupAddress;
+
 	//port to which udpSocket is bound
 	private int bindPort;
 	
-	
+	//identifies state of thread
 	private volatile int responderFlag;
 	
 	private final int DEFAULT_FLAG = 0;
@@ -22,6 +25,7 @@ public class PeerResponder extends Thread {
 		this.udpSocket = udpSocket;
 		this.groupAddress = groupAddress;
 
+		//set thread to default state
 		responderFlag = DEFAULT_FLAG;
 	}
 	
@@ -29,18 +33,20 @@ public class PeerResponder extends Thread {
 		JSONParser parser = new JSONParser();
 
 		String request = "PEER_REQ";
-		
-		//TODO: send to multiple ports
-		//TODO: store tcp bind port in request
 
+		//first packet goes to port determined by (CHAIN_BASE_PORT + UDP_OFFSET)
 		DatagramPacket peerPacket =
 			new DatagramPacket(	request.getBytes(),
 								request.getBytes().length,
 								groupAddress,
-								bindPort);	
-						
-		//send peer request packet to multicast address
-		udpSocket.send(peerPacket);
+								BlockchainManager.CHAIN_BASE_PORT
+									+ BlockchainManager.UDP_OFFSET);
+								
+		//send peer request packet to multicast address on range of udp ports
+		for(int i = 0; i < BlockchainManager.UDP_OFFSET; i++) {
+			udpSocket.send(peerPacket);
+			peerPacket.setPort(peerPacket.getPort() + 1);
+		}
 		
 		boolean timeoutFlag = false;
 		
@@ -86,8 +92,8 @@ public class PeerResponder extends Thread {
 					
 					//add new peer to peer list
 					BlockchainManager.peerList.add(
-						new InetSocketAddress(	receivePacket.getAddress(),
-												receivePacket.getPort() - BlockchainManager.UDP_OFFSET));
+						new InetSocketAddress(receivePacket.getAddress(),
+						receivePacket.getPort() - BlockchainManager.UDP_OFFSET));
 					
 					//obtain local address
 					String address = "";
