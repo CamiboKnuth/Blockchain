@@ -37,6 +37,11 @@ public class BlockchainManager extends Thread {
 		parser = new JSONParser();
 		bindPort = CHAIN_BASE_PORT;
 		
+		//TODO: instantiate blockchain from database if available or from peer if not
+		blockchain = new Blockchain();
+		
+		
+		
 		//TODO: don't let bind attempts surpass UDP_OFFSET
 		
 		//bind blockchain server socket, loop until a port is found to bind to
@@ -72,7 +77,7 @@ public class BlockchainManager extends Thread {
 		//start receiving blocks and chain exchange requests
 		receiver.start();
 		
-		//main loop
+		//main loop to handle user input
 		while(true) {
 
 		

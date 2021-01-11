@@ -53,7 +53,12 @@ public class Blockchain {
 	}
 	
 	public long getMostRecentTimestamp() {
-		return blockList.get(size - 1).getTimestamp();
+		long result = 0;
+		
+		if (size > 0) {
+			result = blockList.get(size - 1).getTimestamp();
+		}
+		return result;
 	}
 	
 	public long size() {

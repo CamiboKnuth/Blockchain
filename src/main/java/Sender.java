@@ -2,23 +2,44 @@ import java.net.*;
 
 import org.json.simple.JSONObject;
 //import org.json.simple.JSONValue;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
+
 
 public class Sender {
 	
-	//private Socket sendSocket;
-	
-	public Sender() {
-		//sendSocket = new Socket();
+	public static void sendChain(DataInputStream inputStream, DataOutputStream outputStream) {
+
+		long i = 0;
+		String response = "";
+
+		//send blocks until done or rejected
+		while (i < BlockchainManager.blockchain.size() && !response.equals("REJ")) {
+			//send block
+			outputStream.writeUTF(
+				BlockchainManager.blockchain.getBlock(i).toJsonString()
+			);
+			
+			//wait for ACC or REJ for each block
+			response = inputStream.readUTF();
+			
+			i++;
+		}
+		
+		//if end of chain reached without rejection, send "done" message
+		if (i == BlockchainManager.blockchain.size()) {
+			outputStream.writeUTF("DONE");
+		}
 	}
 	
-	public void chainExchange(InetAddress recipientAddress, port) {
+	public static void sendChainExchange(InetAddress recipientAddress, port) {
 		
 		//create json object with chain request, size of my chain, and timestamp
 		JSONObject object = new JSONObject();
 		object.put("type", "chainexchange");
 		object.put("size", BlockchainManager.blockchain.size());
-		object.put("time", BlockchainManager.blockchain.getMostRecentTimestamp())
-		String chainReq = object.toString();
+		object.put("time", BlockchainManager.blockchain.getMostRecentTimestamp());
+		String chainEx = object.toString();
 		
 		//connect to recipient
 		Socket sendSocket = new Socket(recipientAddress, port);
@@ -27,17 +48,17 @@ public class Sender {
 		DataOutputStream outputStream = new DataOutputStream(sendSocket.getOutputStream());
 		
 		//send request for chain to recipient
-		outputStream.writeUTF(chainReq);
+		outputStream.writeUTF(chainEx);
 		
 		//wait for response
 		String response = inputStream.readUTF();
 		
 		if (response.equals("AGREE")) {
-			
-		} else if () {
-			
-		} else {
-			
+			//do nothing?
+		} else if (response.equals("REQ")) {
+			sendChain(inputStream, outputStream);
+		} else if (response.equals("CHAIN")) {
+			Receiver.receiveChain(inputStream, outputStream);
 		}
 		
 		inputStream.flush();
@@ -48,29 +69,4 @@ public class Sender {
 		
 		sendSocket.close();
 	}
-
-	
-	public void sendAccept(Block block) {
-		
-		JSONObject object = new JSONObject();
-		object.put("type", "acc");
-		object.put("num", block.getNum());
-		object.put("time", block.getTimestamp());
-		object.put("hash", block.calculateHash());
-		
-		sendBuffer(object.toString().getBytes());	
-	}
-	
-	public void sendBlock(Block block) {
-		JSONObject object = new JSONObject();
-		object.put("type", "block");
-		object.put("num", block.getNum());
-		object.put("time", block.getTimestamp());
-		object.put("prevhash", block.getPrevHash());
-		object.put("data", block.getData());
-		object.put("nonce", block.getNonce());
-		
-		sendBuffer(object.toString().getBytes());		
-	}
-	
 }

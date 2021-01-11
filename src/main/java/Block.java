@@ -1,6 +1,10 @@
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
+
 public class Block {
 	//identifying number of block
 	private long blockNum;
@@ -27,6 +31,16 @@ public class Block {
 		
 		//temporarily set nonce to zero
 		this.nonce = 0;
+	}
+	
+	//construct block from json object
+	public Block(JSONObject object) {
+		
+		this.blockNum = (Long) object.get("num");
+		this.timestamp = (Long) object.get("time");
+		this.prevHash = (String) object.get("prevhash");
+		this.data = (String) object.get("data");
+		this.nonce = (Long) object.get("nonce");
 	}
 	
 	//turn block into a valid block
@@ -102,6 +116,19 @@ public class Block {
 		
 		//get hexadecimal string version of hash
 		return bytesToHex(messageDigest.digest());
+	}
+	
+	public String toJsonString() {
+		//create json object containing block info
+		JSONObject object = new JSONObject();
+		object.put("type", "block");
+		object.put("num", blockNum);
+		object.put("time", timestamp);
+		object.put("prevhash", prevHash);
+		object.put("data", data);
+		object.put("nonce", nonce);
+		
+		return object.toString();	
 	}
 	
 	//convert array of bytes to a hexadecimal string
