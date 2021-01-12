@@ -44,28 +44,36 @@ public class Block {
 	}
 	
 	//turn block into a valid block
-	public void mineBlock() throws NoSuchAlgorithmException {
-		//create digest to create SHA-256 hashes
-		MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
+	public void mineBlock() {
 		
-		String hexHash = "";
+		try {
 		
-		//loop until hexHash starts with a certain number of zeros
-		do {
-			//augment and check next nonce
-			this.nonce ++;
+			//create digest to create SHA-256 hashes
+			MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
 			
-			//hash blocknum, timestamp, prevhash, data, and nonce together
-			String toHash = Integer.toString(this.blockNum) + Long.toString(this.timestamp)
-				+ prevHash + data + Integer.toString(nonce);
-			messageDigest.update(toHash.getBytes());
+			String hexHash = "";
 			
-			//get hexadecimal string version of hash
-			hexHash = bytesToHex(messageDigest.digest());	
+			//loop until hexHash starts with a certain number of zeros
+			do {
+				//augment and check next nonce
+				this.nonce ++;
+				
+				//hash blocknum, timestamp, prevhash, data, and nonce together
+				String toHash = Long.toString(this.blockNum) + Long.toString(this.timestamp)
+					+ prevHash + data + Long.toString(nonce);
+				messageDigest.update(toHash.getBytes());
+				
+				//get hexadecimal string version of hash
+				hexHash = bytesToHex(messageDigest.digest());	
+			
+			} while(!hexHash.substring(0,Blockchain.proofOfWorkString.length()).equals(
+				Blockchain.proofOfWorkString));
+			
+		} catch (NoSuchAlgorithmException noex) {
+			noex.printStackTrace();
+		}
 		
-		} while(!hexHash.substring(0,Blockchain.proofOfWorkString.length()).equals(
-			Blockchain.proofOfWorkString));
-		
+		/*
 		System.out.println("Block Mined Successfully:");
 		System.out.println("   block number    : " + this.blockNum);
 		System.out.println("   timestamp is    : " + this.timestamp);
@@ -73,6 +81,7 @@ public class Block {
 		System.out.println("   contains data   : " + this.data);
 		System.out.println("   nonce value is  : " + this.nonce);
 		System.out.println("   block hash is   : " + this.calculateHash());
+		*/
 	}
 	
 	public long getNum() {
@@ -96,7 +105,7 @@ public class Block {
 	}
 	
 	//check block validity
-	public boolean isValid() throws NoSuchAlgorithmException {		
+	public boolean isValid() {	
 		//get hexadecimal string version of hash
 		String hexHash = this.calculateHash();
 
@@ -105,17 +114,28 @@ public class Block {
 			Blockchain.proofOfWorkString));
 	}
 	
-	public String calculateHash() throws NoSuchAlgorithmException {
-		//create digest to create SHA-256 hashes
-		MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
+	public String calculateHash() {
 		
-		//hash blocknum, timestamp, prevhash, data, and nonce together
-		String toHash = Integer.toString(this.blockNum) + Long.toString(this.timestamp)
-			+ prevHash + data + Integer.toString(nonce);
-		messageDigest.update(toHash.getBytes());
+		String toReturn = "";
 		
-		//get hexadecimal string version of hash
-		return bytesToHex(messageDigest.digest());
+		try {
+			//create digest to create SHA-256 hashes
+			MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
+			
+			//hash blocknum, timestamp, prevhash, data, and nonce together
+			String toHash = Long.toString(this.blockNum) + Long.toString(this.timestamp)
+				+ prevHash + data + Long.toString(nonce);
+			messageDigest.update(toHash.getBytes());
+			
+			//get hexadecimal string version of hash
+			toReturn = bytesToHex(messageDigest.digest());
+			
+		} catch (NoSuchAlgorithmException noex) {
+			noex.printStackTrace();
+		}
+		
+		
+		return toReturn;
 	}
 	
 	public String toJsonString() {

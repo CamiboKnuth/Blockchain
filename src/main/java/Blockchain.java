@@ -6,11 +6,27 @@ public class Blockchain {
 	public static final String proofOfWorkString = "000";
 	
 	private ArrayList<Block> blockList;
-	private long size;
+	private int size;
 	
 	public Blockchain() {
 		this.blockList = new ArrayList<Block>();
 		this.size = 0;
+	}
+	
+	public Block getBlockFromData(String data) {
+		
+		Block newBlock = null;
+		
+		if(size == 0) {
+			String firstPrevHash = "00000000000000000000000000000000" 
+				+ "00000000000000000000000000000000";
+
+			newBlock = new Block(size, firstPrevHash, data);
+		} else {
+			newBlock = new Block(size, blockList.get(size - 1).calculateHash(), data);
+		}
+		
+		return newBlock;
 	}
 	
 	public boolean addBlock(Block toAdd) {
@@ -48,7 +64,7 @@ public class Blockchain {
 		return success;
 	}
 	
-	public Block getBlock(long index) {
+	public Block getBlock(int index) {
 		return blockList.get(index);
 	}
 	
@@ -63,5 +79,11 @@ public class Blockchain {
 	
 	public long size() {
 		return this.size;
+	}
+	
+	public void printChain() {
+		for (int i = 0; i < size; i++) {
+			System.out.println("   " + blockList.get(i).getNum() + ":" + blockList.get(i).getData());
+		}
 	}
 }

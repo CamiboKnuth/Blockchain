@@ -13,6 +13,10 @@ jar {
 	}
 }
 
+run{
+    standardInput = System.in
+}
+
 repositories {
 	flatDir {
 		dirs 'libs'

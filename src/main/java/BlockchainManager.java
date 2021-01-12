@@ -1,6 +1,8 @@
+import java.io.*;
 import java.net.*;
+import java.util.*;
 
-import java.sql.*;
+//import java.sql.*;
 
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -46,32 +48,60 @@ public class BlockchainManager extends Thread {
 		
 		//bind blockchain server socket, loop until a port is found to bind to
 		boolean bound = false;
-		while(!bound) {
-			try {
-				chainServerSocket = new ServerSocket(bindPort);
-				bound = true;
-			} catch (BindException bex) {
-				System.out.println("NOTE: CANNOT BIND ON PORT: " + bindPort);
-				bindPort ++;
+		
+		try {
+			while(!bound) {
+				try {
+					chainServerSocket = new ServerSocket(bindPort);
+					bound = true;
+				} catch (BindException bex) {
+					System.out.println("NOTE: CANNOT BIND ON PORT: " + bindPort);
+					bindPort ++;
+				}
 			}
+		
+		} catch (IOException ioex) {
+			ioex.printStackTrace();
 		}
 		
-		//create and bind udp multicast socket, join multicast group
-		udpSocket = new MulticastSocket(bindPort + BlockchainManager.UDP_OFFSET);
-		udpSocket.setSoTimeout(1000);
-		InetAddress groupAddress = InetAddress.getByName("228.5.6.7");
-		udpSocket.joinGroup(groupAddress);
-		
-		//create tcp receiver and udp multicast responder
+		//used to receive blocks and chain requests
 		receiver = new Receiver(chainServerSocket);
-		peerResponder = new PeerResponder(udpSocket, groupAddress);
+		
+		
+		try {
+			//create and bind udp multicast socket, join multicast group
+			udpSocket = new MulticastSocket(bindPort + UDP_OFFSET);
+			udpSocket.setSoTimeout(1000);
+			InetAddress groupAddress = InetAddress.getByName("233.3.3.3");
+			udpSocket.joinGroup(groupAddress);
+			
+			
+			//create udp multicast responder
+			peerResponder = new PeerResponder(udpSocket, groupAddress);
+		} catch (IOException ioex) {
+			ioex.printStackTrace();
+		}
+		
+		
 	}
 	
 	public void run() {
-		//request list of peers from blockchain network
-		peerResponder.obtainPeerList();
+		
+		BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+		System.out.println("Bound to port: " + bindPort);
+		
+		try {
+			//request list of peers from blockchain network
+			System.out.println("Finding Peers...");
+			peerResponder.obtainPeerList(peerList);
+			System.out.println("Peer Finding Complete.");
+		
+		} catch (IOException ioex) {
+			ioex.printStackTrace();
+		}
 		
 		//start response system to update others peer lists upon request
+		System.out.println("Waiting for Peer Requests");
 		peerResponder.start();
 		
 		//start receiving blocks and chain exchange requests
@@ -79,7 +109,66 @@ public class BlockchainManager extends Thread {
 		
 		//main loop to handle user input
 		while(true) {
+			
+			//	Commands :
+			//		showchain
+			//		showpeers
+			//		addblock [data]
+			//		chainex [address] [port]
 
+			try {
+			
+				String input = reader.readLine();
+				
+				String[] arguments = input.split("\\s+");
+				
+				if (arguments[0].equals("showchain") && arguments.length == 1) {
+
+					System.out.println("Chain is now:");
+					blockchain.printChain();	
+					
+				} else if (arguments[0].equals("showpeers") && arguments.length == 1) {
+					
+					System.out.println("All known peers:");
+					
+					for(int i = 0; i < peerList.size(); i ++) {
+						System.out.println("   " + peerList.get(i).getAddress().getHostAddress()
+							+ ":" + peerList.get(i).getPort());
+					}					
+
+				} else if (arguments[0].equals("addblock") && arguments.length == 2) {
+					
+					System.out.println("Creating block with data: " + arguments[1]);
+					
+					Block toAdd = blockchain.getBlockFromData(arguments[1]);
+					
+					System.out.println("Block created.");
+					System.out.println("Mining Block...");
+					
+					toAdd.mineBlock();
+					
+					System.out.println("Mining finished.");
+					System.out.println("Adding block to chain...");
+					
+					if(blockchain.addBlock(toAdd)) {
+						System.out.println("Block successfully added to chain.");
+					} else {
+						System.out.println("ERROR: Block not added to chain.");
+					}
+					
+				} else if (arguments[0].equals("chainex") && arguments.length == 3) {
+					
+					System.out.println("Sending exchange request to: " + arguments[1] + ":" + arguments[2]);
+					
+					Sender.sendChainExchange(InetAddress.getByName(arguments[1]), Integer.valueOf(arguments[2]));
+				} else {
+					System.out.println("INVALID COMMAND");
+				}
+			
+			} catch (IOException ioex) {
+				ioex.printStackTrace();
+			}
+			
 		
 		}
 	}
