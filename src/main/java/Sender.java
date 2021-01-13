@@ -1,5 +1,6 @@
 import java.io.*;
 import java.net.*;
+import java.util.*;
 
 import org.json.simple.JSONObject;
 //import org.json.simple.JSONValue;
@@ -42,10 +43,11 @@ public class Sender {
 		System.out.println("Send Complete");
 	}
 	
-	public static void sendChainExchange(InetAddress recipientAddress, int port) {
+	
+	//TODO: handle case where peer no longer online
+	public static void sendChainExchange(InetSocketAddress recipientAddress) {
 		
 		try {
-			
 			System.out.println("Creating request object...");
 		
 			//create json object with chain request, size of my chain, and timestamp
@@ -58,7 +60,8 @@ public class Sender {
 			System.out.println("Connecting to recipient...");
 			
 			//connect to recipient
-			Socket sendSocket = new Socket(recipientAddress, port);
+			Socket sendSocket = new Socket();
+			sendSocket.connect(recipientAddress);
 			
 			System.out.println("Connected!");
 			
@@ -96,5 +99,73 @@ public class Sender {
 		} catch (IOException ioex) {
 			ioex.printStackTrace();
 		}
+	}
+	
+	public static void findBestChainFromPeers(ArrayList<InetSocketAddress> peerList) {
+		for(int i = 0; i < peerList.size(); i++) {
+			sendChainExchange(peerList.get(i));	
+		}
+	}
+	
+	//TODO: handle case where peer no longer online
+	public static boolean broadcastBlock(Block block, ArrayList<InetSocketAddress> peerList) {
+		
+		boolean success = true;
+		
+		try {
+			System.out.println("Creating block object to broadcast...");
+		
+			String blockString = block.toJsonString();
+			
+			System.out.println("Broadcasting block...");
+			
+			int i = 0;
+			
+			while (i < peerList.size() && success) {
+
+				//connect to recipient
+				Socket sendSocket = new Socket();
+				sendSocket.connect(peerList.get(i));
+				
+				DataInputStream inputStream = new DataInputStream(sendSocket.getInputStream());
+				DataOutputStream outputStream = new DataOutputStream(sendSocket.getOutputStream());
+				
+				System.out.println("Sending block to recipient " + i + "...");
+				
+				//send request for chain to recipient
+				outputStream.writeUTF(blockString);
+				
+				System.out.println("Sent, Awaiting Response...");
+				
+				//wait for response
+				String response = inputStream.readUTF();
+				
+				System.out.println("Received response: " + response);
+				
+				if (response.equals("REJ")) {
+					success = false;
+				}
+
+				outputStream.flush();
+				
+				inputStream.close();
+				outputStream.close();
+				
+				sendSocket.close();
+				
+				i++;
+			}
+			
+			if (!success) {
+				findBestChainFromPeers(peerList);
+			}
+			
+		} catch (Exception ex) {
+			success = false;
+			ex.printStackTrace();
+		}
+
+		return success;
+		
 	}
 }

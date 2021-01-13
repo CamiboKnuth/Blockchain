@@ -72,16 +72,6 @@ public class Block {
 		} catch (NoSuchAlgorithmException noex) {
 			noex.printStackTrace();
 		}
-		
-		/*
-		System.out.println("Block Mined Successfully:");
-		System.out.println("   block number    : " + this.blockNum);
-		System.out.println("   timestamp is    : " + this.timestamp);
-		System.out.println("   previous hash is: " + this.prevHash);
-		System.out.println("   contains data   : " + this.data);
-		System.out.println("   nonce value is  : " + this.nonce);
-		System.out.println("   block hash is   : " + this.calculateHash());
-		*/
 	}
 	
 	public long getNum() {

@@ -3,7 +3,7 @@ import java.security.NoSuchAlgorithmException;
 
 public class Blockchain {
 	
-	public static final String proofOfWorkString = "000";
+	public static final String proofOfWorkString = "0000";
 	
 	private ArrayList<Block> blockList;
 	private int size;

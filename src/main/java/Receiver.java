@@ -139,9 +139,23 @@ public class Receiver extends Thread {
 					
 					//if a block was sent, determine validity and accept or reject
 					if(object.get("type").equals("block")) {
+
+						Block toAdd = new Block(object);
 						
-						//TODO: validate block
-					
+						System.out.println("Received block: "
+							+ toAdd.getNum() + ":" + toAdd.getData());
+
+						//add block to chain, send REJ if fail
+						if (BlockchainManager.blockchain.addBlock(toAdd)) {
+							
+							System.out.println("Block accepted, sending ACC");
+							outputStream.writeUTF("ACC");
+						} else {
+							
+							System.out.println("Block rejected, sending REJ");
+							outputStream.writeUTF("REJ");
+						}
+
 					//if chain exchange request was sent, instance with more valid chain sends their chain
 					} else if (object.get("type").equals("chainexchange")) {
 						long theirSize = (Long) object.get("size");
