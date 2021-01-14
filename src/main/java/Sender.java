@@ -10,6 +10,8 @@ import org.json.simple.parser.ParseException;
 
 public class Sender {
 	
+	
+	//TODO: handle timeout
 	public static void sendChain(DataInputStream inputStream, DataOutputStream outputStream)
 	throws IOException {
 
@@ -35,9 +37,13 @@ public class Sender {
 			i++;
 		}
 		
-		//if end of chain reached without rejection, send "done" message
-		if (i == BlockchainManager.blockchain.size()) {
-			outputStream.writeUTF("DONE");
+		outputStream.writeUTF("DONE");
+		
+		//if end of chain reached with rejection, validate my chain
+		if (response.equals("REJ")) {
+			BlockchainManager.blockchain.toLongestValidChain();
+			System.out.println("Removed invalid blocks from my chain.");
+			
 		}
 		
 		System.out.println("Send Complete");
@@ -45,7 +51,10 @@ public class Sender {
 	
 	
 	//TODO: handle case where peer no longer online
-	public static void sendChainExchange(InetSocketAddress recipientAddress) {
+	//TODO: handle timeout
+	public static boolean sendChainExchange(InetSocketAddress recipientAddress) {
+		
+		boolean swapped = false;
 		
 		try {
 			System.out.println("Creating request object...");
@@ -85,10 +94,9 @@ public class Sender {
 			} else if (response.equals("REQ")) {
 				sendChain(inputStream, outputStream);
 			} else if (response.equals("CHAIN")) {
-				Receiver.receiveChain(inputStream, outputStream);
+				swapped = Receiver.receiveChain(inputStream, outputStream);
 			}
 			
-
 			outputStream.flush();
 			
 			inputStream.close();
@@ -99,6 +107,8 @@ public class Sender {
 		} catch (IOException ioex) {
 			ioex.printStackTrace();
 		}
+		
+		return swapped;
 	}
 	
 	public static void findBestChainFromPeers(ArrayList<InetSocketAddress> peerList) {
@@ -142,20 +152,21 @@ public class Sender {
 				
 				System.out.println("Received response: " + response);
 				
-				if (response.equals("REJ")) {
-					success = false;
-				}
-
 				outputStream.flush();
 				
 				inputStream.close();
 				outputStream.close();
 				
 				sendSocket.close();
+			
+				if (response.equals("REJ")) {
+					success = !sendChainExchange(peerList.get(i));
+				}
 				
 				i++;
 			}
 			
+			//may not be necessary?
 			if (!success) {
 				findBestChainFromPeers(peerList);
 			}

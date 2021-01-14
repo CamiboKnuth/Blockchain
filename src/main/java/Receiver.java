@@ -21,8 +21,12 @@ public class Receiver extends Thread {
 		parser = new JSONParser();
 	}
 	
-	public static void receiveChain(DataInputStream inputStream, DataOutputStream outputStream)
+	//TODO: handle timeout
+	
+	public static boolean receiveChain(DataInputStream inputStream, DataOutputStream outputStream)
 	throws IOException {
+		
+		boolean swapped = false;
 		
 		//create new chain to compare to current chain
 		Blockchain nextChain = new Blockchain();
@@ -59,7 +63,6 @@ public class Receiver extends Thread {
 							outputStream.writeUTF("ACC");
 						} else {
 							
-							
 							System.out.println("Block rejected, sending REJ");
 							
 							outputStream.writeUTF("REJ");
@@ -91,9 +94,10 @@ public class Receiver extends Thread {
 			
 			System.out.println("They're chain longer, replacing...");
 			
-			
 			//they're more valid, replace chain
 			BlockchainManager.blockchain = nextChain;
+			
+			swapped = true;
 			
 		} else if (BlockchainManager.blockchain.size() == nextChain.size()) {
 			
@@ -106,8 +110,12 @@ public class Receiver extends Thread {
 
 				//they're more valid, replace chain
 				BlockchainManager.blockchain = nextChain;
+				
+				swapped = true;
 			}	
-		} 		
+		} 
+
+		return swapped;
 	}
 	
 	public void run() {

@@ -13,6 +13,10 @@ public class Blockchain {
 		this.size = 0;
 	}
 	
+	public ArrayList<Block> getBlockList() {
+		return blockList;
+	}
+	
 	public Block getBlockFromData(String data) {
 		
 		Block newBlock = null;
@@ -27,6 +31,18 @@ public class Blockchain {
 		}
 		
 		return newBlock;
+	}
+	
+	
+	//for test purposes
+	public void addInvalidBlock(Block toAdd) {
+		blockList.add(toAdd);
+		this.size ++;		
+	}
+	
+	public void removeLastBlock() {
+		blockList.remove(size - 1);
+		this.size --;
 	}
 	
 	public boolean addBlock(Block toAdd) {
@@ -64,6 +80,19 @@ public class Blockchain {
 		return success;
 	}
 	
+	public void toLongestValidChain() {
+		Blockchain newChain = new Blockchain();
+		
+		int i = 0;
+		
+		while(i < this.size && newChain.addBlock(this.getBlock(i))) {
+			i++;
+		}
+		
+		this.blockList = newChain.getBlockList();
+		this.size = newChain.size();
+	}
+	
 	public Block getBlock(int index) {
 		return blockList.get(index);
 	}
@@ -77,7 +106,7 @@ public class Blockchain {
 		return result;
 	}
 	
-	public long size() {
+	public int size() {
 		return this.size;
 	}
 	

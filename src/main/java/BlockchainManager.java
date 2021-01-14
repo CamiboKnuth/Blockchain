@@ -110,6 +110,7 @@ public class BlockchainManager extends Thread {
 			//		showchain
 			//		showpeers
 			//		addblock [data]
+			//		addblockfalse [data]
 			//		addblockhere [data]
 			//		chainex [address] [port]
 
@@ -135,40 +136,54 @@ public class BlockchainManager extends Thread {
 
 				} else if (arguments[0].equals("addblock") && arguments.length == 2) {
 					
-					System.out.println("Creating block with data: " + arguments[1]);
+					boolean done = false;
+					
+					do {
+						
+						Block toAdd = null;
+						
+						do {		
+							System.out.println("Creating block with data: " + arguments[1]);
+						
+							toAdd = blockchain.getBlockFromData(arguments[1]);
+						
+							System.out.println("Block created.");
+							System.out.println("Mining Block...");
+							
+							toAdd.mineBlock();
+							
+							System.out.println("Mining finished.");
+							
+							System.out.println("Attempting broadcast...");
+							
+						} while (!Sender.broadcastBlock(toAdd, peerList));
+						
+						System.out.println("Broadcast succeeded");
+						
+						System.out.println("Adding block to chain...");
+						
+						if(blockchain.addBlock(toAdd)) {
+							System.out.println("Block successfully added to chain.");
+							done = true;
+						} else {
+							System.out.println("ERROR: Block not added to chain.");
+						}
 
+					} while (!done);
+					
+				} else if (arguments[0].equals("addblockfalse") && arguments.length == 2) {
+					
+					System.out.println("Creating local block with data: " + arguments[1]);
+					
 					Block toAdd = blockchain.getBlockFromData(arguments[1]);
 					
-					System.out.println("Block created.");
-					System.out.println("Mining Block...");
+					System.out.println("Invalid Block Created.");
+
+					System.out.println("Adding invalid block to local chain...");
 					
-					toAdd.mineBlock();
+					blockchain.addInvalidBlock(toAdd);
 					
-					System.out.println("Mining finished.");
-					System.out.println("Attempting broadcast...");
-					
-					while (!Sender.broadcastBlock(toAdd, peerList)) {
-						System.out.println("Broadcast failed.");
-						
-						toAdd = blockchain.getBlockFromData(arguments[1]);
-					
-						System.out.println("Block created.");
-						System.out.println("Mining Block...");
-						
-						toAdd.mineBlock();
-						
-						System.out.println("Mining finished.");
-						System.out.println("Attempting broadcast...");
-					}
-					
-					System.out.println("Broadcast succeeded");
-					System.out.println("Adding block to chain...");
-					
-					if(blockchain.addBlock(toAdd)) {
-						System.out.println("Block successfully added to chain.");
-					} else {
-						System.out.println("ERROR: Block not added to chain.");
-					}
+					System.out.println("Invalid Block Added.");
 					
 				} else if (arguments[0].equals("addblockhere") && arguments.length == 2) {
 					
