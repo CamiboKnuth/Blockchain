@@ -10,8 +10,6 @@ import org.json.simple.parser.ParseException;
 
 public class Sender {
 	
-	
-	//TODO: handle timeout
 	public static void sendChain(DataInputStream inputStream, DataOutputStream outputStream)
 	throws IOException {
 
@@ -51,7 +49,6 @@ public class Sender {
 	
 	
 	//TODO: handle case where peer no longer online
-	//TODO: handle timeout
 	public static boolean sendChainExchange(InetSocketAddress recipientAddress) {
 		
 		boolean swapped = false;
@@ -104,6 +101,8 @@ public class Sender {
 			
 			sendSocket.close();
 			
+		} catch (SocketTimeoutException stex) {
+			System.out.println("TIMEOUT");
 		} catch (IOException ioex) {
 			ioex.printStackTrace();
 		}
@@ -133,35 +132,40 @@ public class Sender {
 			
 			while (i < peerList.size() && success) {
 
-				//connect to recipient
-				Socket sendSocket = new Socket();
-				sendSocket.connect(peerList.get(i));
+				try {
+					//connect to recipient
+					Socket sendSocket = new Socket();
+					sendSocket.connect(peerList.get(i));
+					
+					DataInputStream inputStream = new DataInputStream(sendSocket.getInputStream());
+					DataOutputStream outputStream = new DataOutputStream(sendSocket.getOutputStream());
+					
+					System.out.println("Sending block to recipient " + i + "...");
+					
+					//send request for chain to recipient
+					outputStream.writeUTF(blockString);
+					
+					System.out.println("Sent, Awaiting Response...");
+					
+					//wait for response
+					String response = inputStream.readUTF();
+					
+					System.out.println("Received response: " + response);
+					
+					outputStream.flush();
+					
+					inputStream.close();
+					outputStream.close();
+					
+					sendSocket.close();
 				
-				DataInputStream inputStream = new DataInputStream(sendSocket.getInputStream());
-				DataOutputStream outputStream = new DataOutputStream(sendSocket.getOutputStream());
-				
-				System.out.println("Sending block to recipient " + i + "...");
-				
-				//send request for chain to recipient
-				outputStream.writeUTF(blockString);
-				
-				System.out.println("Sent, Awaiting Response...");
-				
-				//wait for response
-				String response = inputStream.readUTF();
-				
-				System.out.println("Received response: " + response);
-				
-				outputStream.flush();
-				
-				inputStream.close();
-				outputStream.close();
-				
-				sendSocket.close();
-			
-				if (response.equals("REJ")) {
-					success = !sendChainExchange(peerList.get(i));
-				}
+					if (response.equals("REJ")) {
+						success = !sendChainExchange(peerList.get(i));
+					}
+
+				} catch (SocketTimeoutException stex) {
+					System.out.println("TIMEOUT");
+				} 
 				
 				i++;
 			}

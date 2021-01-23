@@ -110,9 +110,26 @@ public class Blockchain {
 		return this.size;
 	}
 	
+	public String toHtmlString() {
+		StringBuilder toReturn = new StringBuilder("******************************<br>");
+		
+		for (int i = size - 1; i >= 0; i--) {
+			toReturn.append("Block #" + blockList.get(i).getNum() + "<br>"); 
+			toReturn.append("   Previous Block Hash: " + blockList.get(i).getPrevHash() + "<br>");
+			toReturn.append("   Block Hash:          " + blockList.get(i).calculateHash() + "<br>");
+			toReturn.append("   Timestamp:           " + blockList.get(i).getTimestamp() + "<br>");
+			toReturn.append("   Nonce:               " + blockList.get(i).getNonce() + "<br>");
+			toReturn.append("   Data:                " + blockList.get(i).getData() + "<br>");
+			toReturn.append("******************************<br>");
+		}
+		
+		return toReturn.toString();
+	}
+	
 	public void printChain() {
 		for (int i = 0; i < size; i++) {
-			System.out.println("   " + blockList.get(i).getNum() + ":" + blockList.get(i).getData());
+			System.out.println("   " + blockList.get(i).getNum() + ":"
+				+ blockList.get(i).getData());
 		}
 	}
 }

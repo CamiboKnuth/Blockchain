@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js">
+	</script>
+	<script>
+		// This function starts the request and calls success on response.
+		var sendAjax = function() {
+			$.ajax({
+				url: "/getlists",
+				cache: false,
+				success: success
+			});
+		}
+
+		// Replaces the contents of the field with your response and
+		// triggers refresh() after 2000ms.
+		var success = function(data) {
+			$("#blocklist").html(data);
+			setTimeout(sendAjax, 2000);
+		}
+		
+		
+		var sendPost = function(method, postObject) {
+		
+			$.post(method, postObject,
+			function(data,status){
+				alert(data);
+			});		
+		}
+
+
+		// Starts processing when document is ready.
+		$(document).ready(function() {
+			setTimeout(sendAjax, 2000);
+		})
+		
+		
+		// Starts processing when document is ready.
+		$(document).ready(function(){
+			$("#blockbutton1").click(function() {
+				var toPost = {
+					blockdata: $("#blockdata").val()
+				};
+				
+				console.log("got data: " + $("#blockdata").val());
+				
+				sendPost("addvalid",toPost);
+			});
+
+			$("#blockbutton2").click(function() {
+				var toPost = {
+					blockdata: $("#blockdata").val()
+				};
+				
+				sendPost("addlocal",toPost);
+			});
+			
+			$("#blockbutton3").click(function() {
+				var toPost = {
+					blockdata: $("#blockdata").val()
+				};
+				
+				sendPost("addinvalid",toPost);
+			});
+		});
+		
+		
+	</script>
+
+
+	<head>
+		<title> Blockchain Test </title>
+	</head>
+	
+	<body>
+		This is a webpage to test blockchain interactions. <br><br>
+		
+		Block Data:
+
+		<br>
+		
+
+		<textarea rows="4" cols="60" id="blockdata" name="blockdata"></textarea>
+		<br>
+		<button id="blockbutton1">Add as Shared Valid Block</button>
+		<button id="blockbutton2">Add as Local Valid Block</button>
+		<button id="blockbutton3">Add as Local Invalid Block</button>
+
+		<br>
+		<br>		
+		<span id="blocklist"></span>
+		<br>
+	</body>
+</html>

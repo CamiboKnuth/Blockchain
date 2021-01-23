@@ -12,9 +12,6 @@ public class PeerResponder extends Thread {
 	
 	//multicast address
 	private InetAddress groupAddress;
-
-	//port to which udpSocket is bound
-	private int bindPort;
 	
 	//identifies state of thread
 	private volatile int responderFlag;
@@ -49,7 +46,7 @@ public class PeerResponder extends Thread {
 		//send peer request packet to multicast address on range of udp ports
 		for(int i = 0; i < BlockchainManager.UDP_OFFSET; i++) {
 			
-			if (peerPacket.getPort() != (BlockchainManager.bindPort + BlockchainManager.UDP_OFFSET)) {
+			if (peerPacket.getPort() != (BlockchainManager.chainBindPort + BlockchainManager.UDP_OFFSET)) {
 				System.out.println("Sending PEER_REQ packet to port " + peerPacket.getPort());
 				udpSocket.send(peerPacket);
 			}
@@ -132,7 +129,7 @@ public class PeerResponder extends Thread {
 					//add address and port to json string
 					JSONObject object = new JSONObject();
 					object.put("ip", address);
-					object.put("port", BlockchainManager.bindPort);
+					object.put("port", BlockchainManager.chainBindPort);
 				
 					byte[] toSend = object.toString().getBytes();
 					
@@ -142,7 +139,7 @@ public class PeerResponder extends Thread {
 											receivePacket.getAddress(),
 											receivePacket.getPort());
 											
-					System.out.println("Sending my address back: " + address + ":" + BlockchainManager.bindPort);
+					System.out.println("Sending my address back: " + address + ":" + BlockchainManager.chainBindPort);
 							
 					//send response back to sender
 					udpSocket.send(peerPacket);

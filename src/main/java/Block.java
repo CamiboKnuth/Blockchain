@@ -47,7 +47,6 @@ public class Block {
 	public void mineBlock() {
 		
 		try {
-		
 			//create digest to create SHA-256 hashes
 			MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
 			

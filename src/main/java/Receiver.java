@@ -21,8 +21,6 @@ public class Receiver extends Thread {
 		parser = new JSONParser();
 	}
 	
-	//TODO: handle timeout
-	
 	public static boolean receiveChain(DataInputStream inputStream, DataOutputStream outputStream)
 	throws IOException {
 		
@@ -46,25 +44,20 @@ public class Receiver extends Thread {
 					//handle if block, send REJ if not
 					if(object.get("type").equals("block")) {
 						
-						
 						//create block from sent json object
 						Block nextBlock = new Block(object);
 						
-						
 						System.out.println("Received block: "
 							+ nextBlock.getNum() + ":" + nextBlock.getData());
-						
 						
 						//add block to chain, send REJ if fail
 						if (nextChain.addBlock(nextBlock)) {
 							
 							System.out.println("Block accepted, sending ACC");
-							
 							outputStream.writeUTF("ACC");
 						} else {
 							
 							System.out.println("Block rejected, sending REJ");
-							
 							outputStream.writeUTF("REJ");
 							done = true;
 						}
@@ -77,6 +70,9 @@ public class Receiver extends Thread {
 					//receive next input from other user
 					response = inputStream.readUTF();
 					
+				} catch (SocketTimeoutException stex) {
+					System.out.println("TIMEOUT");
+					done = true;
 				} catch (ParseException parex) {
 					done = true;
 				}
@@ -122,15 +118,14 @@ public class Receiver extends Thread {
 		
 		//TODO: handle multiple connections?
 		
-		
 		while(receiverFlag != CLOSE_FLAG) {
 			
 			try {
-				
 				System.out.println("Awaiting Connection...");
 			
 				//wait to receive connection
 				Socket receiveSocket = serverSocket.accept();
+				receiveSocket.setSoTimeout(500);
 				DataInputStream inputStream = new DataInputStream(receiveSocket.getInputStream());
 				DataOutputStream outputStream = new DataOutputStream(receiveSocket.getOutputStream());
 				
@@ -221,7 +216,6 @@ public class Receiver extends Thread {
 					parex.printStackTrace();
 				}
 				
-
 				outputStream.flush();
 				
 				inputStream.close();
@@ -229,6 +223,8 @@ public class Receiver extends Thread {
 				
 				receiveSocket.close();
 				
+			} catch (SocketTimeoutException stex) {
+				//System.out.println("TIMEOUT");
 			} catch (IOException ioex) {
 				ioex.printStackTrace();
 			}
