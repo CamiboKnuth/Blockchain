@@ -3,6 +3,7 @@ import java.security.NoSuchAlgorithmException;
 
 public class Blockchain {
 	
+	//used to make it computationally expensive to create valid block
 	public static final String proofOfWorkString = "0000";
 	
 	private ArrayList<Block> blockList;
@@ -13,19 +14,25 @@ public class Blockchain {
 		this.size = 0;
 	}
 	
+	//return this chain as an arraylist
 	public ArrayList<Block> getBlockList() {
 		return blockList;
 	}
 	
+	//create new block to add to this chain, link prevhash of new block
+	//to hash of last block currently in this chain
 	public Block getBlockFromData(String data) {
 		
 		Block newBlock = null;
 		
+		//if chain is empty, new block will be first, previous hash is all 0's
 		if(size == 0) {
 			String firstPrevHash = "00000000000000000000000000000000" 
 				+ "00000000000000000000000000000000";
 
 			newBlock = new Block(size, firstPrevHash, data);
+			
+		//if chain is not empty, new block's previous hash will be hash of last block
 		} else {
 			newBlock = new Block(size, blockList.get(size - 1).calculateHash(), data);
 		}
@@ -34,7 +41,7 @@ public class Blockchain {
 	}
 	
 	
-	//for test purposes
+	//for test purposes, adds block without validating it
 	public void addInvalidBlock(Block toAdd) {
 		blockList.add(toAdd);
 		this.size ++;		
@@ -45,6 +52,7 @@ public class Blockchain {
 		this.size --;
 	}
 	
+	//adds and validates block
 	public boolean addBlock(Block toAdd) {
 		
 		boolean success = false;
@@ -80,15 +88,19 @@ public class Blockchain {
 		return success;
 	}
 	
+	//turns this chain into longest subchain from this chain that is still valid
 	public void toLongestValidChain() {
+		//create new chain to contain valid blocks
 		Blockchain newChain = new Blockchain();
 		
 		int i = 0;
 		
+		//adds blocks from this chain to new chain until one isn't valid
 		while(i < this.size && newChain.addBlock(this.getBlock(i))) {
 			i++;
 		}
 		
+		//replace this chain's variables with those from new chain
 		this.blockList = newChain.getBlockList();
 		this.size = newChain.size();
 	}
@@ -97,6 +109,11 @@ public class Blockchain {
 		return blockList.get(index);
 	}
 	
+	public int size() {
+		return this.size;
+	}
+	
+	//get the timestamp of the block most recently added to this chain
 	public long getMostRecentTimestamp() {
 		long result = 0;
 		
@@ -106,10 +123,7 @@ public class Blockchain {
 		return result;
 	}
 	
-	public int size() {
-		return this.size;
-	}
-	
+	//creates an html string to send to requesting web page in response to post request
 	public String toHtmlString() {
 		StringBuilder toReturn = new StringBuilder("******************************<br>");
 		
@@ -124,12 +138,5 @@ public class Blockchain {
 		}
 		
 		return toReturn.toString();
-	}
-	
-	public void printChain() {
-		for (int i = 0; i < size; i++) {
-			System.out.println("   " + blockList.get(i).getNum() + ":"
-				+ blockList.get(i).getData());
-		}
 	}
 }

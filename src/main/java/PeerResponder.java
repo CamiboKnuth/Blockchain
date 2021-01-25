@@ -8,24 +8,17 @@ import org.json.simple.parser.ParseException;
 
 public class PeerResponder extends Thread {
 	
+	//socket for sending and responding to peer requests
 	private MulticastSocket udpSocket;
 	
 	//multicast address
 	private InetAddress groupAddress;
 	
-	//identifies state of thread
-	private volatile int responderFlag;
-	
-	private final int DEFAULT_FLAG = 0;
-	private final int CLOSE_FLAG = 1;
 	
 	public PeerResponder(MulticastSocket udpSocket, InetAddress groupAddress) {
 		
 		this.udpSocket = udpSocket;
 		this.groupAddress = groupAddress;
-
-		//set thread to default state
-		responderFlag = DEFAULT_FLAG;
 	}
 	
 	public void obtainPeerList(ArrayList<InetSocketAddress> peerList) throws IOException {
@@ -97,7 +90,8 @@ public class PeerResponder extends Thread {
 	
 	public void run() {
 		
-		while (responderFlag != CLOSE_FLAG) {
+		//always respond to peer requests
+		while (true) {
 			try {
 				byte[] buffer = new byte[128];
 				DatagramPacket receivePacket = new DatagramPacket(buffer, buffer.length);
@@ -110,10 +104,15 @@ public class PeerResponder extends Thread {
 				//if packet is a peer request, respond with host and port of this instance
 				if((new String(receivePacket.getData(),"UTF-8")).trim().equals("PEER_REQ")) {
 					
+					InetSocketAddress newAddress = new InetSocketAddress(
+						receivePacket.getAddress(),
+						receivePacket.getPort() - BlockchainManager.UDP_OFFSET
+					);
+					
 					//add new peer to peer list
-					BlockchainManager.peerList.add(
-						new InetSocketAddress(receivePacket.getAddress(),
-						receivePacket.getPort() - BlockchainManager.UDP_OFFSET));
+					if (!BlockchainManager.addressInPeerList(newAddress)) {
+						BlockchainManager.peerList.add(newAddress);
+					}
 						
 					System.out.println("Added peer: " + receivePacket.getAddress().getHostAddress()
 						+ ":" + (receivePacket.getPort() - BlockchainManager.UDP_OFFSET));
@@ -131,8 +130,8 @@ public class PeerResponder extends Thread {
 					object.put("ip", address);
 					object.put("port", BlockchainManager.chainBindPort);
 				
+					//addmy address and port to datagram packet
 					byte[] toSend = object.toString().getBytes();
-					
 					DatagramPacket peerPacket =
 						new DatagramPacket(	toSend,
 											toSend.length,

@@ -45,7 +45,6 @@ public class Block {
 	
 	//turn block into a valid block
 	public void mineBlock() {
-		
 		try {
 			//create digest to create SHA-256 hashes
 			MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
@@ -93,7 +92,7 @@ public class Block {
 		return this.nonce;
 	}
 	
-	//check block validity
+	//check if block hash matches desired pattern to be considered valid
 	public boolean isValid() {	
 		//get hexadecimal string version of hash
 		String hexHash = this.calculateHash();
@@ -103,8 +102,8 @@ public class Block {
 			Blockchain.proofOfWorkString));
 	}
 	
+	//determine the hash of all of this block's local variables combined
 	public String calculateHash() {
-		
 		String toReturn = "";
 		
 		try {
@@ -122,7 +121,6 @@ public class Block {
 		} catch (NoSuchAlgorithmException noex) {
 			noex.printStackTrace();
 		}
-		
 		
 		return toReturn;
 	}

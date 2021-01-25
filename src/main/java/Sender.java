@@ -3,7 +3,6 @@ import java.net.*;
 import java.util.*;
 
 import org.json.simple.JSONObject;
-//import org.json.simple.JSONValue;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
@@ -18,7 +17,7 @@ public class Sender {
 		
 		System.out.println("Sending chain...");
 
-		//send blocks until done or rejected
+		//send blocks in chain to other user until done or rejected
 		while (i < BlockchainManager.blockchain.size() && !response.equals("REJ")) {
 			//send block
 			outputStream.writeUTF(
@@ -46,9 +45,7 @@ public class Sender {
 		
 		System.out.println("Send Complete");
 	}
-	
-	
-	//TODO: handle case where peer no longer online
+
 	public static boolean sendChainExchange(InetSocketAddress recipientAddress) {
 		
 		boolean swapped = false;
@@ -67,6 +64,7 @@ public class Sender {
 			
 			//connect to recipient
 			Socket sendSocket = new Socket();
+			sendSocket.setSoTimeout(500);
 			sendSocket.connect(recipientAddress);
 			
 			System.out.println("Connected!");
@@ -86,14 +84,20 @@ public class Sender {
 			
 			System.out.println("Received response: " + response);
 			
+			//if they agree with local chain, do nothing
 			if (response.equals("AGREE")) {
-				//do nothing?
+				//do nothing
+				
+			//if they request local chain, send local chain to them
 			} else if (response.equals("REQ")) {
 				sendChain(inputStream, outputStream);
+				
+			//if they request to send chain, prepare to receive chain
 			} else if (response.equals("CHAIN")) {
 				swapped = Receiver.receiveChain(inputStream, outputStream);
 			}
 			
+			//close connection with other user
 			outputStream.flush();
 			
 			inputStream.close();
@@ -103,6 +107,8 @@ public class Sender {
 			
 		} catch (SocketTimeoutException stex) {
 			System.out.println("TIMEOUT");
+		} catch (ConnectException conex) {
+			System.out.println("Connection Failed.");
 		} catch (IOException ioex) {
 			ioex.printStackTrace();
 		}
@@ -110,32 +116,37 @@ public class Sender {
 		return swapped;
 	}
 	
+	//offer to exchange change with each peer
 	public static void findBestChainFromPeers(ArrayList<InetSocketAddress> peerList) {
 		for(int i = 0; i < peerList.size(); i++) {
 			sendChainExchange(peerList.get(i));	
 		}
 	}
 	
-	//TODO: handle case where peer no longer online
 	public static boolean broadcastBlock(Block block, ArrayList<InetSocketAddress> peerList) {
-		
 		boolean success = true;
 		
 		try {
 			System.out.println("Creating block object to broadcast...");
-		
+			
+			//convert block to be broadcast to json string
 			String blockString = block.toJsonString();
 			
 			System.out.println("Broadcasting block...");
 			
-			int i = 0;
+			//create list with same data as peer list
+			ArrayList<InetSocketAddress> newPeerList = new ArrayList<InetSocketAddress>(peerList);
 			
-			while (i < peerList.size() && success) {
+			//loop over list, sending block to each, removing peers from
+			//original list if connection refused
+			int i = 0;
+			while (i < newPeerList.size() && success) {
 
 				try {
 					//connect to recipient
 					Socket sendSocket = new Socket();
-					sendSocket.connect(peerList.get(i));
+					sendSocket.setSoTimeout(500);
+					sendSocket.connect(newPeerList.get(i));
 					
 					DataInputStream inputStream = new DataInputStream(sendSocket.getInputStream());
 					DataOutputStream outputStream = new DataOutputStream(sendSocket.getOutputStream());
@@ -152,6 +163,8 @@ public class Sender {
 					
 					System.out.println("Received response: " + response);
 					
+					
+					//close connection with other user
 					outputStream.flush();
 					
 					inputStream.close();
@@ -159,18 +172,23 @@ public class Sender {
 					
 					sendSocket.close();
 				
+					//if other user rejected block, request their chain.
+					//retain success if local chain is not replaced
 					if (response.equals("REJ")) {
-						success = !sendChainExchange(peerList.get(i));
+						success = !sendChainExchange(newPeerList.get(i));
 					}
 
 				} catch (SocketTimeoutException stex) {
 					System.out.println("TIMEOUT");
-				} 
+				} catch (ConnectException conex) {
+					System.out.println("Connection Failed. Removing Peer.");
+					peerList.remove(newPeerList.get(i));
+				}
 				
 				i++;
 			}
 			
-			//may not be necessary?
+			//if chain broadcast failed, find best chain from peers
 			if (!success) {
 				findBestChainFromPeers(peerList);
 			}
@@ -180,7 +198,6 @@ public class Sender {
 			ex.printStackTrace();
 		}
 
-		return success;
-		
+		return success;	
 	}
 }

@@ -10,12 +10,7 @@ public class Receiver extends Thread {
 	private ServerSocket serverSocket;
 	private static JSONParser parser;
 	
-	
-	private volatile int receiverFlag;
-	
-	private final int DEFAULT_FLAG = 0;
-	private final int CLOSE_FLAG = 1;
-	
+
 	public Receiver(ServerSocket serverSocket) {
 		this.serverSocket = serverSocket;
 		parser = new JSONParser();
@@ -24,6 +19,7 @@ public class Receiver extends Thread {
 	public static boolean receiveChain(DataInputStream inputStream, DataOutputStream outputStream)
 	throws IOException {
 		
+		//start by assuming local chain has not been replaced
 		boolean swapped = false;
 		
 		//create new chain to compare to current chain
@@ -36,7 +32,6 @@ public class Receiver extends Thread {
 		
 		while (!done) {
 			if (!response.equals("DONE")) {
-				
 				try {
 					//parse block string into json object
 					JSONObject object = (JSONObject) parser.parse(response);
@@ -52,16 +47,13 @@ public class Receiver extends Thread {
 						
 						//add block to chain, send REJ if fail
 						if (nextChain.addBlock(nextBlock)) {
-							
 							System.out.println("Block accepted, sending ACC");
 							outputStream.writeUTF("ACC");
 						} else {
-							
 							System.out.println("Block rejected, sending REJ");
 							outputStream.writeUTF("REJ");
 							done = true;
 						}
-						
 					} else {
 						outputStream.writeUTF("REJ");
 						done = true;
@@ -76,7 +68,6 @@ public class Receiver extends Thread {
 				} catch (ParseException parex) {
 					done = true;
 				}
-
 			} else {
 				done = true;
 			}
@@ -86,6 +77,7 @@ public class Receiver extends Thread {
 		
 		System.out.println("Comparing chains...");
 		
+		//if they're chain is longer, replace local chain with their chain
 		if (BlockchainManager.blockchain.size() < nextChain.size()) {
 			
 			System.out.println("They're chain longer, replacing...");
@@ -94,11 +86,13 @@ public class Receiver extends Thread {
 			BlockchainManager.blockchain = nextChain;
 			
 			swapped = true;
-			
+		
+		//if chains are equal size, check timestamps		
 		} else if (BlockchainManager.blockchain.size() == nextChain.size()) {
 			
 			System.out.println("Chains equal size, checking timestamps");
 
+			//if they're chain is more recent, replace local chain with their chain
 			if (BlockchainManager.blockchain.getMostRecentTimestamp()
 			> nextChain.getMostRecentTimestamp()) {
 				
@@ -111,14 +105,14 @@ public class Receiver extends Thread {
 			}	
 		} 
 
+		//return whether or not local chain was replaced
 		return swapped;
 	}
 	
 	public void run() {
-		
-		//TODO: handle multiple connections?
-		
-		while(receiverFlag != CLOSE_FLAG) {
+				
+		//always respond to chain requests and blocks
+		while(true) {
 			
 			try {
 				System.out.println("Awaiting Connection...");
@@ -216,6 +210,7 @@ public class Receiver extends Thread {
 					parex.printStackTrace();
 				}
 				
+				//close connection with other user
 				outputStream.flush();
 				
 				inputStream.close();

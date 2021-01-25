@@ -4,7 +4,8 @@
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js">
 	</script>
 	<script>
-		// This function starts the request and calls success on response.
+		
+		//Send post request to server to get peer list and block list
 		var sendAjax = function() {
 			$.ajax({
 				url: "/getlists",
@@ -13,14 +14,13 @@
 			});
 		}
 
-		// Replaces the contents of the field with your response and
-		// triggers refresh() after 2000ms.
+		//update site to show updated peer and block list
 		var success = function(data) {
-			$("#blocklist").html(data);
+			$("#datalist").html(data);
 			setTimeout(sendAjax, 2000);
 		}
 		
-		
+		//Send a post request with a certain method and object to send
 		var sendPost = function(method, postObject) {
 		
 			$.post(method, postObject,
@@ -30,15 +30,17 @@
 		}
 
 
-		// Starts processing when document is ready.
+		//upon load, send post request for updated list every two seconds
 		$(document).ready(function() {
 			setTimeout(sendAjax, 2000);
 		})
 		
 		
-		// Starts processing when document is ready.
+		//send post request based on button clicked
 		$(document).ready(function(){
-			$("#blockbutton1").click(function() {
+			//when adding block as shared block, block will be
+			//mined and broadcast to peers
+			$("#blockbuttonshare").click(function() {
 				var toPost = {
 					blockdata: $("#blockdata").val()
 				};
@@ -48,7 +50,9 @@
 				sendPost("addvalid",toPost);
 			});
 
-			$("#blockbutton2").click(function() {
+			//when adding block as local valid block, block will be
+			//mined and added to local chain, but not broadcast
+			$("#blockbuttonlocal").click(function() {
 				var toPost = {
 					blockdata: $("#blockdata").val()
 				};
@@ -56,7 +60,10 @@
 				sendPost("addlocal",toPost);
 			});
 			
-			$("#blockbutton3").click(function() {
+			//when adding block as a local invalid block, block will
+			//not be mined, but will simply be added to local chain
+			//and not broadcast
+			$("#blockbuttoninvalid").click(function() {
 				var toPost = {
 					blockdata: $("#blockdata").val()
 				};
@@ -83,13 +90,13 @@
 
 		<textarea rows="4" cols="60" id="blockdata" name="blockdata"></textarea>
 		<br>
-		<button id="blockbutton1">Add as Shared Valid Block</button>
-		<button id="blockbutton2">Add as Local Valid Block</button>
-		<button id="blockbutton3">Add as Local Invalid Block</button>
+		<button id="blockbuttonshare">Add as Shared Valid Block</button>
+		<button id="blockbuttonlocal">Add as Local Valid Block</button>
+		<button id="blockbuttoninvalid">Add as Local Invalid Block</button>
 
 		<br>
 		<br>		
-		<span id="blocklist"></span>
+		<span id="datalist"></span>
 		<br>
 	</body>
 </html>
