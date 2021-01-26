@@ -203,6 +203,8 @@ public class BlockchainManager extends Thread {
 				
 			} catch (IOException ioex) {
 				ioex.printStackTrace();
+			} catch (Exception ex) {
+				ex.printStackTrace();
 			}
 		}
 	}
