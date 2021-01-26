@@ -25,6 +25,7 @@
 		
 			$.post(method, postObject,
 			function(data,status){
+				$("#blockdata").val("");
 				alert(data);
 			});		
 		}
@@ -88,7 +89,7 @@
 		<br>
 		
 
-		<textarea rows="4" cols="60" id="blockdata" name="blockdata"></textarea>
+		<textarea rows="4" cols="70" id="blockdata" name="blockdata"></textarea>
 		<br>
 		<button id="blockbuttonshare">Add as Shared Valid Block</button>
 		<button id="blockbuttonlocal">Add as Local Valid Block</button>

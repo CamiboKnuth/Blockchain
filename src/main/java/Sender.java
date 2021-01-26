@@ -51,7 +51,7 @@ public class Sender {
 		boolean swapped = false;
 		
 		try {
-			System.out.println("Creating request object...");
+			System.out.println("Creating exchange request object...");
 		
 			//create json object with chain request, size of my chain, and timestamp
 			JSONObject object = new JSONObject();
@@ -175,7 +175,11 @@ public class Sender {
 					//if other user rejected block, request their chain.
 					//retain success if local chain is not replaced
 					if (response.equals("REJ")) {
+						System.out.println("Rejected, exchanging chain...");
+						
 						success = !sendChainExchange(newPeerList.get(i));
+						
+						System.out.println("Was chain swapped?: " + !success);
 					}
 
 				} catch (SocketTimeoutException stex) {
@@ -190,11 +194,11 @@ public class Sender {
 			
 			//if chain broadcast failed, find best chain from peers
 			if (!success) {
+				System.out.println("Broadcast failed, finding best chain from peers...");
 				findBestChainFromPeers(peerList);
 			}
 			
 		} catch (Exception ex) {
-			success = false;
 			ex.printStackTrace();
 		}
 

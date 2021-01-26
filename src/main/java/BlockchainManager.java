@@ -131,9 +131,17 @@ public class BlockchainManager extends Thread {
 		System.out.println("Waiting for Peer Requests");
 		peerResponder.start();
 		
-
 		//start receiving blocks and chain exchange requests
 		receiver.start();
+
+		try {
+			System.out.println("\n\nHTTP server running on:\n"
+			+  "   Local:  127.0.0.1:" + webBindPort + "\n"
+			+  "   Remote: " + Inet4Address.getLocalHost().getHostAddress()
+			+  ":" + webBindPort);
+		} catch (IOException ioex) {
+			ioex.printStackTrace();
+		}
 
 		//main loop for handling browser input from user
 		while (true) {
@@ -152,7 +160,7 @@ public class BlockchainManager extends Thread {
 				
 				//loop over input until empty
 				while (!line.isEmpty()) {
-					System.out.println(line);
+					//System.out.println(line);
 					
 					//if post method used, capture length of post content
 					if(method.substring(0,4).equals("POST") && line.length() > 15) {
@@ -175,8 +183,8 @@ public class BlockchainManager extends Thread {
 					postString = new String(postData);
 				}
 				
-				System.out.println("method is:" + method);
-				System.out.println("post data is: " + postString + "\n");
+				//System.out.println("method is:" + method);
+				//System.out.println("post data is: " + postString + "\n");
 				
 				//determine how to respond based on received method and POST data
 				String response = performActionFromHeader(method, postString);
@@ -199,6 +207,7 @@ public class BlockchainManager extends Thread {
 		}
 	}
 	
+	//check if an address is in the peer list
 	public static boolean addressInPeerList(InetSocketAddress address) {
 		
 		String addressString = address.getAddress().getHostAddress();
@@ -206,6 +215,7 @@ public class BlockchainManager extends Thread {
 		
 		boolean found = false;
 		
+		//loop over peer list until end or found address
 		int i = 0;
 		while (i < peerList.size() && !found) {
 			if (peerList.get(i).getAddress().getHostAddress().equals(addressString)
@@ -300,7 +310,7 @@ public class BlockchainManager extends Thread {
 						
 						addBlock("valid", postString);
 						
-						String dataString = "Mining Complete. Added shared valid block with data: " + postString;
+						String dataString = "Mining Complete. Chain Modified";
 						response = OK_HEADER + dataString.length() + OK_HEADER_END + dataString;
 						
 					//if addlocal command applied, create a valid block from the
@@ -347,43 +357,34 @@ public class BlockchainManager extends Thread {
 		//create a valid block from data and broadcast the block to other instances
 		if (type.equals("valid")) {
 
-			boolean done = false;
-
-			//loop until finished adding and getting block accepted by peers
-			do {
-				Block toAdd = null;
+			Block toAdd = null;
+			
+			//create, mine and broadcast block until accepted by peers
+			//rejection by peers will modify local chain
+			do {		
+				System.out.println("Creating block with data: " + data);
+			
+				toAdd = blockchain.getBlockFromData(data);
+			
+				System.out.println("Block created.");
+				System.out.println("Mining Block...");
 				
-				//create, mine and broadcast block until accepted by peers
-				//rejection by peers will modify local chain
-				do {		
-					System.out.println("Creating block with data: " + data);
+				//turn block into valid block
+				toAdd.mineBlock();
 				
-					toAdd = blockchain.getBlockFromData(data);
+				System.out.println("Mining finished.");
 				
-					System.out.println("Block created.");
-					System.out.println("Mining Block...");
-					
-					//turn block into valid block
-					toAdd.mineBlock();
-					
-					System.out.println("Mining finished.");
-					System.out.println("Attempting broadcast...");
-					
-				} while (!Sender.broadcastBlock(toAdd, peerList));
-				
-				System.out.println("Broadcast succeeded");
-				System.out.println("Adding block to chain...");
-				
-				//broadcast may succeed, but local add can still fail
-				//due to modified chain in case of previously invalid chain
+				//add block to local chain, will be modified if rejected by peers
 				if(blockchain.addBlock(toAdd)) {
 					System.out.println("Block successfully added to chain.");
-					done = true;
 				} else {
 					System.out.println("ERROR: Block not added to chain.");
 				}
-
-			} while (!done);			
+				
+			//broadcast block to peers, repeat until accepted
+			} while (!Sender.broadcastBlock(toAdd, peerList));
+			
+			System.out.println("Broadcast succeeded");
 
 		//create a valid block from data, do not broadcast
 		} else if (type.equals("local")) {
